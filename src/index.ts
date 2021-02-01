@@ -2,10 +2,10 @@ import express, {Request, Response} from 'express'
 import Knex from 'knex'
 import {Model} from 'objection'
 import bodyParser from 'body-parser'
-const config = require('./knexfile.js') 
+import config from '../knexfile' 
 import 'dotenv/config'
 
-
+console.log(process.env.user)
 const knex = Knex(config.development)
 const app = express()
 
