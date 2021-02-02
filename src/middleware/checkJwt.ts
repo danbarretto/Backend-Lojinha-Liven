@@ -1,22 +1,13 @@
 import { NextFunction, Request, Response } from 'express'
 import jwt from 'jsonwebtoken'
 import 'dotenv/config'
-interface TokenData {
-    token: string,
-    expiresIn: number
-}
-
-interface DataStoredInToken {
-    _id: number
-}
-
 
 export default (req: Request, res: Response, next: NextFunction) => {
     //const authHeader = parseCookies(req)
-    if(!req.headers.authorization || !req.cookies.token) return res.status(401).send({error:'No token provided!'})
+    if(!req.cookies.token) return res.status(401).send({error:'No token provided!'})
 
-    const header = <string>req.headers.authorization;
-    const parts = header.split(' ')
+    const cookie =req.cookies.token
+    const parts = cookie.split(' ')
     const [scheme, token] = parts
     const secret = <string>process.env.SECRET_JWT
 
@@ -34,16 +25,9 @@ export default (req: Request, res: Response, next: NextFunction) => {
         res.status(401).send({error:'Invalid token!'});
         return;
     }
-
-    //The token is valid for 1 hour
-    //We want to send a new token on every request
-    const { userId, username } = jwtPayload;
-    const newToken = jwt.sign({ userId, username }, secret, {
-        expiresIn: "1h"
-    });
-    res.setHeader("token", newToken);
-
+    
+    req.id = jwtPayload.id
     //Call the next middleware or controller
-    next();
+    return next();
 
 }

@@ -2,8 +2,6 @@ import { Request, Response } from "express";
 import bcrypt from 'bcrypt'
 import User from "../models/User";
 import jwt from 'jsonwebtoken'
-import { ValidationError } from "objection";
-import 'dotenv/config'
 
 function generateToken(params: {}) {
     const token = jwt.sign(params, <string>process.env.SECRET_JWT, {
@@ -41,8 +39,8 @@ export default {
             return res.send(400).send({ error: 'Error upon inserting data!' })
         }
         user.password = ''
-        const token = generateToken({ id: user.id })
-        res.cookie('Authorization', `Bearer ${token}`, { httpOnly: true, sameSite: true })
+        const token = generateToken({ id: user.id, email:user.email })
+        res.cookie('token', `Bearer ${token}`, { httpOnly: true, sameSite: true })
         return res.send({ user })
 
     },
@@ -57,9 +55,9 @@ export default {
             return res.status(400).send({ error: 'Invalid password!' })
         }
         user.password = ''
-        const token = generateToken({ id: user.id })
-        res.cookie('Authorization', `Bearer ${token}`, { httpOnly: true, sameSite: true })
+        const token = generateToken({ id: user.id, email:user.email })
+        res.cookie('token', `Bearer ${token}`, { httpOnly: true, sameSite: true })
 
-        return res.send({ name: user.name, birthday: user.birthday, email: user.email })
+        return res.send({ id: user.id, name: user.name, birthday: user.birthday, email: user.email })
     },
 }
