@@ -22,7 +22,9 @@ export default class User extends Model {
       email: { type: 'string' },
       password: { type: 'string' },
       name: { type: 'string' },
-      birthday: { type: 'date' }
+      birthday: { type: 'date' },
+      created_at:{type:'date'},
+      updated_at:{type:'date'}
     }
 
   }
