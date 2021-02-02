@@ -48,12 +48,21 @@ export default {
             })
             return res.send({id, name: user.name, email: user.email, birthday: user.birthday })
         } catch (err) {
-            console.log(err)
             return res.status(400).send({ error: 'Error while updating user!' })
         }
     },
     async deleteAccount(req: Request, res: Response) {
-        
+        const { id  }: { id: number } = req.body
+        if(req.id !== id) return res.status(401).send({error:'Unauthorized'})
+        try {
+            const deletedAccount = await User.query().deleteById(id)
+            if(deletedAccount === 0 ) return res.status(400).send({error:'No account found'})
+
+            return res.send()
+        } catch (err) {
+            console.log(err)
+            return res.status(400).send({ error: 'Error while updating user!' })
+        }
     }
 
 }

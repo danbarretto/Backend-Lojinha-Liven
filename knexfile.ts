@@ -1,4 +1,5 @@
 // Update with your config settings.
+import 'dotenv/config'
 export default {
   development: {
     client: "mysql2",

@@ -9,7 +9,7 @@ export async function up(knex: Knex) {
         table.text('addressName').notNullable()
         table.integer('addressNumber').notNullable()
         table.text('complement')
-        table.foreign('userId').references('id').inTable('user')
+        table.foreign('userId').references('id').inTable('user').onDelete('cascade')
 
     })
 
