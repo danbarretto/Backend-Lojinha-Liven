@@ -8,7 +8,7 @@ export default class User extends Model {
   email!: string
   created_at!: Date
   updated_at!: Date
-
+  password!:string
   addresses?:Address[]
 
   static tableName = 'user'
