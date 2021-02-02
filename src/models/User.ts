@@ -8,10 +8,24 @@ export default class User extends Model {
   email!: string
   created_at!: Date
   updated_at!: Date
-  password!:string
-  addresses?:Address[]
+  password!: string
+  addresses?: Address[]
 
   static tableName = 'user'
+
+
+  static jsonSchema = {
+    type: 'object',
+    required: ['email', 'name', 'birthday', 'password'],
+    properties: {
+      id: { type: 'integer' },
+      email: { type: 'string' },
+      password: { type: 'string' },
+      name: { type: 'string' },
+      birthday: { type: 'date' }
+    }
+
+  }
 
   static relationMappings = () => ({
     addresses: {
