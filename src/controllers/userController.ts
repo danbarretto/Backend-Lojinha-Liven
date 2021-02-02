@@ -1,7 +1,6 @@
 import { Request, Response } from "express";
 import Address from "../models/Address";
 import User from "../models/User";
-import _ from 'lodash'
 
 interface UserAddresses {
     user: User,
