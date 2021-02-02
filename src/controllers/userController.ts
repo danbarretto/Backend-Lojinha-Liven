@@ -1,11 +1,12 @@
 import { Request, Response } from "express";
-import { QueryBuilder } from "knex";
-import { type } from "os";
-import { stringify } from "querystring";
 import Address from "../models/Address";
 import User from "../models/User";
+import _ from 'lodash'
 
-
+interface UserAddresses {
+    user: User,
+    addresses: Address[]
+}
 
 export default {
     async getUserInfo(req: Request, res: Response) {
@@ -13,62 +14,33 @@ export default {
         const idNumber = Number(id)
         if (isNaN(idNumber) || !req.id || req.id !== idNumber) return res.status(401).send({ error: 'Unauthorized!' })
 
-        const promises: [Promise<User>, Promise<any>] = [
-            User.query().findById(idNumber).select('user.name', 'user.email', 'user.id', 'user.birthday'),
-            Address.query()
-                .select('address.id', 'address.cep', 'address.addressName', 'address.addressNumber', 'address.complement')
-                .where('userId', '=', idNumber)
-        ]
+        const user = await User.query()
+            .where('id', '=', idNumber).
+            withGraphFetched('address')
+            .select('user.id', 'user.name', 'user.email', 'user.birthday')
 
-        const results = await Promise.all(promises)
-
-        const [user, address] = results
-
-        return res.send({ user, address })
+        return res.send({ user })
 
     },
     async searchUserInfo(req: Request, res: Response) {
         const fields: string[] = []
         const values: string[] = []
-        const userIds: string[] = []
-        let searchById = false
         Object.keys(req.query).forEach(key => {
             if (key in User.jsonSchema.properties) {
-                fields.push(key)
+                fields.push('user.' + key)
                 values.push(<string>req.query[key])
 
-                if (key === 'id') {
-                    userIds.push(<string>req.query.id)
-                    searchById = true
-                }
             }
         })
         try {
-            //Search by Id is separated to optmize search in database
-            if (searchById) {
-                let promises: [Promise<User[]>, Promise<Address[]>] = [
-                    User.query()
-                        .select('name', 'email', 'birthday')
-                        .whereComposite(fields, '=', values),
-                    Address.query()
-                        .select('addressName', 'addressNumber', 'complement', 'cep', 'userId')
-                        .where('userId', '=', userIds)
-                ]
-                const [users, address] = await Promise.all(promises)
-                return res.send({ users, address })
-            } else {
-                const users = await User.query()
-                    .select('id', 'name', 'email', 'birthday')
-                    .whereComposite(fields, '=', values)
+            const users = await User.query()
+                .whereComposite(fields, '=', values).
+                withGraphFetched('address')
+                .select('user.id', 'user.name', 'user.email', 'user.birthday')
+            return res.send({ users })
 
-                const promises: Promise<Address[]>[] = users.map(user => Address.query()
-                    .select('addressName', 'addressNumber', 'complement', 'cep', 'userId')
-                    .where('userId', '=', user.id))
-                    
-                const address = await Promise.all(promises)
-                return res.send({ users, address })
-            }
         } catch (err) {
+            console.log(err)
             return res.status(400).send({ error: 'Error while getting data' })
         }
     },

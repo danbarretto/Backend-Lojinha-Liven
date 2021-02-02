@@ -12,8 +12,10 @@ function generateToken(params: {}) {
 
 export default {
     async createAccount(req: Request, res: Response) {
-        const { email, password, name, birthday } = req.body
+        const { email, password, name, birthday }: {email:string, password:string, name:string, birthday:string} = req.body
         if (!(email && password && name && birthday)) return res.status(400).send({ error: 'Please, fill all missing camps!' })
+
+        if(password.length < 8) return res.status(400).send({error:'Password must be at least 8 characters long!'})
 
         const regexEmail = new RegExp(/^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/);
         if (!regexEmail.test(email)) return res.status(400).send({ error: 'Invalid email!' })

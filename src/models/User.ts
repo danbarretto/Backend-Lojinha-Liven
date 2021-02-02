@@ -30,7 +30,7 @@ export default class User extends Model {
   }
 
   static relationMappings = () => ({
-    addresses: {
+    address: {
       relation: Model.HasManyRelation,
       modelClass: Address,
       join: {

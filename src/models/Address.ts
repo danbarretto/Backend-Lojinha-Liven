@@ -25,7 +25,7 @@ export default class Address extends Model {
     }
 
     static relationMappings = () => ({
-        userOwner: {
+        user: {
             relation: Model.BelongsToOneRelation,
             modelClass: User,
             join: {
