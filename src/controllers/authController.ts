@@ -27,9 +27,9 @@ export default {
         } catch (err) {
             return res.status(400).send({ error: 'Invalid password' })
         }
-        let user = await User.query().findOne({email})
-        if(user) return res.status(400).send({error:'Email already registered'})
-        
+        let user = await User.query().findOne({ email })
+        if (user) return res.status(400).send({ error: 'Email already registered' })
+
         try {
             user = await User.query().insertAndFetch({
                 name,
@@ -41,12 +41,25 @@ export default {
             return res.send(400).send({ error: 'Error upon inserting data!' })
         }
         user.password = ''
-        const token = generateToken({id:user.id})
+        const token = generateToken({ id: user.id })
         res.cookie('Authorization', `Bearer ${token}`, { httpOnly: true, sameSite: true })
-        return res.send({user})
+        return res.send({ user })
 
     },
-    async login() {
+    async login(req: Request, res: Response) {
+        const { email, password } = req.body
+        if (!(email && password)) return res.status(400).send({ error: 'Please, fill all the missing camps!' })
 
+        const user = await User.query().findOne({ email })
+        if (!user) return res.status(404).send({ error: 'User not registered!' })
+
+        if (!(await bcrypt.compare(password, user.password))) {
+            return res.status(400).send({ error: 'Invalid password!' })
+        }
+        user.password = ''
+        const token = generateToken({ id: user.id })
+        res.cookie('Authorization', `Bearer ${token}`, { httpOnly: true, sameSite: true })
+
+        return res.send({ name: user.name, birthday: user.birthday, email: user.email })
     },
 }
