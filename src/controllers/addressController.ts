@@ -23,7 +23,7 @@ export default {
             })
         } catch (err) {
             console.log(err)
-            return res.status(500).send({ error: 'Error while inserting address!',errorCode: err })
+            return res.status(500).send({ error: 'Error while inserting address!', errorCode: err })
         }
         return res.send({ user: address })
 
@@ -50,7 +50,22 @@ export default {
 
     },
     async deleteAddress(req: Request, res: Response) {
+        const { id, userId }: { id: number, userId: number } = req.body
+        if (!(userId && id)) return res.status(400).send({ error: 'Please, provide the address and user ids!!' })
+        if (userId !== req.id) return res.status(403).send({ error: 'Unauthorized!' })
 
+        try {
+
+            const address = await Address.query().findById(id)
+            if (address.userId === userId) {
+                const rows = await Address.query().deleteById(id)
+                if (rows > 0)
+                    return res.send()
+                return res.status(400).send({ error: 'No address found!' })
+            }else return res.status(403).send({error:'Unauthorized!'})
+        } catch (err) {
+            return res.status(400).send({ error: 'Error while deleting address!', errorCode: err })
+        }
     },
     async searchAddressInfo(req: Request, res: Response) {
 

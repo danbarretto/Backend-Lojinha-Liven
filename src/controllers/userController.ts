@@ -25,7 +25,6 @@ export default {
             if (key in User.jsonSchema.properties) {
                 fields.push('user.' + key)
                 values.push(<string>req.query[key])
-
             }
         })
         try {
