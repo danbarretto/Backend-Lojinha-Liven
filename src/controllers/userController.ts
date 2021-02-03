@@ -1,11 +1,6 @@
 import { Request, Response } from "express";
-import Address from "../models/Address";
 import User from "../models/User";
 
-interface UserAddresses {
-    user: User,
-    addresses: Address[]
-}
 
 export default {
     async getUserInfo(req: Request, res: Response) {
@@ -13,12 +8,14 @@ export default {
         const idNumber = Number(id)
         if (isNaN(idNumber) || !req.id || req.id !== idNumber) return res.status(401).send({ error: 'Unauthorized!' })
 
-        const user = await User.query()
+        User.query()
             .where('id', '=', idNumber).
             withGraphFetched('address')
-            .select('user.id', 'user.name', 'user.email', 'user.birthday')
-
-        return res.send({ user })
+            .select('user.id', 'user.name', 'user.email', 'user.birthday').then(user => {
+                return res.send({ user })
+            }).catch(err => {
+                return res.status(400).send({ error: 'Error while getting data', errorCode: err })
+            })
 
     },
     async searchUserInfo(req: Request, res: Response) {
@@ -33,14 +30,13 @@ export default {
         })
         try {
             const users = await User.query()
-                .whereComposite(fields, '=', values).
-                withGraphFetched('address')
+                .whereComposite(fields, '=', values)
+                .withGraphFetched('address')
                 .select('user.id', 'user.name', 'user.email', 'user.birthday')
             return res.send({ users })
 
         } catch (err) {
-            console.log(err)
-            return res.status(400).send({ error: 'Error while getting data' })
+            return res.status(400).send({ error: 'Error while getting data', errorCode: err })
         }
     },
 
@@ -60,7 +56,7 @@ export default {
             })
             return res.send({ id, name: user.name, email: user.email, birthday: user.birthday })
         } catch (err) {
-            return res.status(400).send({ error: 'Error while updating user!' })
+            return res.status(400).send({ error: 'Error while updating user!', errorCode: err })
         }
     },
     async deleteAccount(req: Request, res: Response) {
@@ -72,8 +68,7 @@ export default {
 
             return res.send()
         } catch (err) {
-            console.log(err)
-            return res.status(400).send({ error: 'Error while updating user!' })
+            return res.status(400).send({ error: 'Error while updating user!', errCode:err })
         }
     }
 
