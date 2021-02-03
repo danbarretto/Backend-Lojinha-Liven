@@ -6,6 +6,8 @@ export async function up(knex: Knex) {
         table.increments('id').primary()
         table.integer('userId').unsigned()
         table.text('cep').notNullable()
+        table.text('state').notNullable()
+        table.text('city').notNullable()
         table.text('addressName').notNullable()
         table.integer('addressNumber').notNullable()
         table.text('complement')

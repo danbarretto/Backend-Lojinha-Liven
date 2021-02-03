@@ -3,23 +3,27 @@ import Address from "../models/Address";
 
 export default {
     async createAddress(req: Request, res: Response) {
-        const { userId, cep, addressName, addressNumber, complement }:
-            { userId: number, cep: string, addressName: string, addressNumber: number, complement: string } = req.body
+        const { userId, cep, city, state, addressName, addressNumber, complement }:
+            {
+                userId: number, cep: string, city: string, state: string,
+                addressName: string, addressNumber: number, complement: string
+            } = req.body
 
-        if (!(userId && cep && addressName && addressName && addressNumber))
+        if (!(userId && cep && addressName && addressName && addressNumber && city && state))
             return res.status(400).send({ error: 'Please fill all the missing camps!' })
 
         if (userId !== req.id) return res.status(403).send({ error: 'Unauthorized!' })
 
         let address: Address
         try {
-
             address = await Address.query().insertAndFetch({
                 userId,
                 cep,
                 addressName,
                 addressNumber,
                 complement,
+                city,
+                state
             })
         } catch (err) {
             console.log(err)
@@ -29,8 +33,9 @@ export default {
 
     },
     async updateAddress(req: Request, res: Response) {
-        const { id, userId, cep, addressName, addressNumber, complement }:
-            { id: number, userId: number, cep: string, addressName: string, addressNumber: number, complement: string } = req.body
+        const { id, userId, cep, city, state, addressName, addressNumber, complement }:
+            { id: number, userId: number, cep: string, city: string, state: string,
+                 addressName: string, addressNumber: number, complement: string } = req.body
 
         if (!(userId && id)) return res.status(400).send({ error: 'Please, provide the address and user ids!!' })
 
@@ -41,7 +46,9 @@ export default {
             cep,
             addressName,
             addressNumber,
-            complement
+            complement,
+            city,
+            state
         }).then(address => {
             return res.send({ address })
         }).catch(err => {
