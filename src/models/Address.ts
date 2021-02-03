@@ -1,3 +1,4 @@
+import { QueryBuilder } from 'knex'
 import { Model } from 'objection'
 import User from './User'
 

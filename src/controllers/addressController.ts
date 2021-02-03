@@ -62,15 +62,45 @@ export default {
                 if (rows > 0)
                     return res.send()
                 return res.status(400).send({ error: 'No address found!' })
-            }else return res.status(403).send({error:'Unauthorized!'})
+            } else return res.status(403).send({ error: 'Unauthorized!' })
         } catch (err) {
             return res.status(400).send({ error: 'Error while deleting address!', errorCode: err })
         }
     },
     async searchAddressInfo(req: Request, res: Response) {
+        const fields: string[] = []
+        const values: string[] = []
+        Object.keys(req.query).forEach(key => {
+            if (key in Address.jsonSchema.properties) {
+                fields.push('address.' + key)
+                values.push(<string>req.query[key])
+            }
+        })
+        try {
+            const addresses = await Address.query()
+                .whereComposite(fields, '=', values)
+                .withGraphFetched('user')
+                .modifyGraph('user', user => user.select('id', 'name', 'email', 'birthday'))
+                .select('address.*')
+            return res.send({ addresses })
 
+        } catch (err) {
+            return res.status(400).send({ error: 'Error while getting data', errorCode: err })
+        }
     },
     async getUserAddress(req: Request, res: Response) {
+        const { id } = req.params
+        const idNumber = Number(id)
+        if (isNaN(idNumber)) return res.status(401).send({ error: 'Id is not a number!' })
 
+        Address.query()
+            .where('id', '=', idNumber).
+            withGraphFetched('user')
+            .modifyGraph('user', user => user.select('id', 'name', 'email', 'birthday'))
+            .select('address.*').then(address => {
+                return res.send({ address })
+            }).catch(err => {
+                return res.status(400).send({ error: 'Error while getting address', errorCode: err })
+            })
     }
 }
