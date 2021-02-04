@@ -7,8 +7,8 @@ export default {
     async getUserInfo(req: Request, res: Response) {
         const { id } = req.params
         const idNumber = Number(id)
-        
-        if(isNaN(idNumber)) return res.status(400).send({error:'Id is not a number!'})
+
+        if (isNaN(idNumber)) return res.status(400).send({ error: 'Id is not a number!' })
 
         if (!req.id || req.id !== idNumber) return res.status(401).send({ error: 'Unauthorized!' })
 
@@ -37,7 +37,8 @@ export default {
         Object.keys(req.query).forEach(key => {
             if (key in User.jsonSchema.properties) {
                 const validation = schema.validate({ [key]: req.query[key] })
-                validation.error ? errors.push(validation.error) : null;
+                if (validation.error) errors.push(validation.error)
+
                 fields.push('user.' + key)
                 values.push(<string>req.query[key])
             }
@@ -88,7 +89,7 @@ export default {
     async deleteAccount(req: Request, res: Response) {
         const { id }: { id: number } = req.body
         const validation = Joi.number().validate(id)
-        if(validation.error) return res.status(400).send({error:'Id is not a number!', errors:validation.error})
+        if (validation.error) return res.status(400).send({ error: 'Id is not a number!', errors: validation.error })
 
         if (req.id !== id) return res.status(401).send({ error: 'Unauthorized' })
         try {

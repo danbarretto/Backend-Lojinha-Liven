@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import Address from "../models/Address";
+import Joi from 'joi'
 
 export default {
     async createAddress(req: Request, res: Response) {
@@ -9,8 +10,18 @@ export default {
                 addressName: string, addressNumber: number, complement: string
             } = req.body
 
-        if (!(userId && cep && addressName && addressName && addressNumber && city && state))
-            return res.status(400).send({ error: 'Please fill all the missing camps!' })
+        const schema = Joi.object({
+            userId: Joi.number().integer().required(),
+            cep: Joi.string().required(),
+            city: Joi.string().required(),
+            state: Joi.string().required(),
+            addressName: Joi.string().required(),
+            addressNumber: Joi.number().integer().required(),
+            complement: Joi.string()
+        })
+
+        const validation = schema.validate({ userId, cep, city, state, addressName, addressNumber, complement })
+        if (validation.error) return res.status(400).send({ error: 'Data is not valid!', errors: validation.error })
 
         if (userId !== req.id) return res.status(403).send({ error: 'Unauthorized!' })
 
@@ -34,10 +45,24 @@ export default {
     },
     async updateAddress(req: Request, res: Response) {
         const { id, userId, cep, city, state, addressName, addressNumber, complement }:
-            { id: number, userId: number, cep: string, city: string, state: string,
-                 addressName: string, addressNumber: number, complement: string } = req.body
+            {
+                id: number, userId: number, cep: string, city: string, state: string,
+                addressName: string, addressNumber: number, complement: string
+            } = req.body
 
-        if (!(userId && id)) return res.status(400).send({ error: 'Please, provide the address and user ids!!' })
+        const schema = Joi.object({
+            id: Joi.number().integer().required(),
+            userId: Joi.number().integer().required(),
+            cep: Joi.string(),
+            city: Joi.string(),
+            state: Joi.string(),
+            addressName: Joi.string(),
+            addressNumber: Joi.number().integer(),
+            complement: Joi.string()
+        })
+
+        const validation = schema.validate({ id, userId, cep, city, state, addressName, addressNumber, complement })
+        if (validation.error) return res.status(400).send({ error: 'Data is not valid!', errors: validation.error })
 
         if (userId !== req.id) return res.status(403).send({ error: 'Unauthorized!' })
 
@@ -58,7 +83,14 @@ export default {
     },
     async deleteAddress(req: Request, res: Response) {
         const { id, userId }: { id: number, userId: number } = req.body
-        if (!(userId && id)) return res.status(400).send({ error: 'Please, provide the address and user ids!!' })
+        const schema = Joi.object({
+            id: Joi.number().integer().required(),
+            userId: Joi.number().integer().required()
+        })
+
+        const validation = schema.validate({ id, userId })
+        if (validation.error) return res.status(400).send({ error: 'Data is not valid!', errors: validation.error })
+
         if (userId !== req.id) return res.status(403).send({ error: 'Unauthorized!' })
 
         try {
@@ -77,12 +109,30 @@ export default {
     async searchAddressInfo(req: Request, res: Response) {
         const fields: string[] = []
         const values: string[] = []
+        const errors: Error[] = []
+
+        const schema = Joi.object({
+            id: Joi.number().integer(),
+            cep: Joi.string(),
+            city: Joi.string(),
+            state: Joi.string(),
+            addressName: Joi.string(),
+            addressNumber: Joi.number().integer(),
+            complement: Joi.string()
+        })
+
         Object.keys(req.query).forEach(key => {
             if (key in Address.jsonSchema.properties) {
+                const validation = schema.validate({ [key]: req.query[key] })
+                if (validation.error) errors.push(validation.error)
+
                 fields.push('address.' + key)
                 values.push(<string>req.query[key])
             }
         })
+
+        if (errors.length > 0) return res.status(400).send({ error: 'Data is not valid!', errors })
+
         try {
             const addresses = await Address.query()
                 .whereComposite(fields, '=', values)
