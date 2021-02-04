@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import bcrypt from 'bcrypt'
 import User from "../models/User";
 import jwt from 'jsonwebtoken'
+import Joi from "joi";
 
 function generateToken(params: {}) {
     const token = jwt.sign(params, <string>process.env.SECRET_JWT, {
@@ -12,15 +13,23 @@ function generateToken(params: {}) {
 
 export default {
     async createAccount(req: Request, res: Response) {
-        const { email, password, name, birthday }: { email: string, password: string, name: string, birthday: string } = req.body
-        if (!(email && password && name && birthday)) return res.status(400).send({ error: 'Please, fill all missing camps!' })
+        const { email, password, name, birthday }:
+            { email: string, password: string, name: string, birthday: string } = req.body
 
-        if (password.length < 8) return res.status(400).send({ error: 'Password must be at least 8 characters long!' })
+        const schema = Joi.object({
+            email: Joi.string().email().required(),
+            password: Joi.string().min(8).required(),
+            name: Joi.string().required(),
+            birthday: Joi.date()
+        })
+        const validation = schema.validate({ email, password, name, birthday })
+        if (validation.error) {
+            validation.error._original.password = null
+            return res.status(400).send({ error: 'Data is not valid!', errors: validation.error })
+        }
 
-        const regexEmail = new RegExp(/^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/);
-        if (!regexEmail.test(email)) return res.status(400).send({ error: 'Invalid email!' })
 
-        const saltRounds = 15
+        const saltRounds = <string>process.env.HASH_SALT_ROUNDS
         let hashedPass: string
         try {
             hashedPass = await bcrypt.hash(password, saltRounds)
@@ -49,13 +58,21 @@ export default {
     },
     async login(req: Request, res: Response) {
         const { email, password } = req.body
-        if (!(email && password)) return res.status(400).send({ error: 'Please, fill all the missing camps!' })
-
-        let user:User
-        try{
+        const schema = Joi.object({
+            email:Joi.string().email().required(),
+            password:Joi.string().required()
+        })
+        const validation = schema.validate({ email, password })
+        if (validation.error) {
+            validation.error._original.password = null
+            return res.status(400).send({ error: 'Data is not valid!', errors: validation.error })
+        }
+        
+        let user: User
+        try {
             user = await User.query().findOne({ email })
             if (!user) return res.status(404).send({ error: 'User not registered!' })
-            
+
             if (!(await bcrypt.compare(password, user.password))) {
                 return res.status(400).send({ error: 'Invalid password!' })
             }
@@ -63,8 +80,8 @@ export default {
             const token = generateToken({ id: user.id, email: user.email })
             res.cookie('token', `Bearer ${token}`, { httpOnly: true, sameSite: true })
             return res.send({ id: user.id, name: user.name, birthday: user.birthday, email: user.email })
-        }catch(err){
-            return res.status(400).send({error:'Error while trying to login', errorCode:err})
+        } catch (err) {
+            return res.status(400).send({ error: 'Error while trying to login', errorCode: err })
         }
 
     },
